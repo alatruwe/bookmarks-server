@@ -4,7 +4,7 @@ const BookmarksService = {
   },
 
   getById(knex, id) {
-    return knex.from("bookmarks").select("*").where("id", id).first();
+    return knex.select("*").from("bookmarks").where("id", id).first();
   },
 };
 
