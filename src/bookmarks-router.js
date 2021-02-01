@@ -17,42 +17,24 @@ bookmarksRouter
       })
       .catch(next);
   })
-  .post(bodyParser, (req, res) => {
+  .post(bodyParser, (req, res, next) => {
     const { title, url, rating, description } = req.body;
+    const newBookmark = { title, url, rating, description };
 
-    if (!title) {
-      logger.error(`title is required`);
-      return res.status(400).send("Invalid data");
-    }
-    if (!url) {
-      logger.error(`title is required`);
-      return res.status(400).send("Invalid data");
-    }
-    if (!rating) {
-      logger.error(`title is required`);
-      return res.status(400).send("Invalid data");
-    }
-    if (!description) {
-      logger.error(`title is required`);
-      return res.status(400).send("Invalid data");
+    // validation
+    for (const [key, value] of Object.entries(newBookmark)) {
+      if (value == null) {
+        return res.status(400).json({
+          error: { message: `Missing '${key}' in request body` },
+        });
+      }
     }
 
-    const id = uuid();
-
-    const bookmark = {
-      id,
-      title,
-      url,
-      rating,
-      description,
-    };
-
-    bookmarks.push(bookmark);
-    logger.info(`Bookmark with id ${id} created`);
-    res
-      .status(201)
-      .location(`http://localhost:8000/bookmarks/${id}`)
-      .json({ id });
+    BookmarksService.insertBookmark(req.app.get("db"), newBookmark)
+      .then((bookmark) => {
+        res.status(201).location(`/bookmarks/${bookmark.id}`).json(bookmark);
+      })
+      .catch(next);
   });
 
 bookmarksRouter

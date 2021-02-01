@@ -77,4 +77,58 @@ describe("Bookmarks Endpoints", function () {
       });
     });
   });
+
+  describe(`POST /bookmarks`, () => {
+    it(`creates an bookmark, responding with 201 and the new bookmark`, function () {
+      this.retries(3);
+      const newBookmark = {
+        //title, url, rating, description
+        title: "Test new bookmark",
+        url: "Listicle",
+        rating: "3",
+        description: "Test new bookmark content...",
+      };
+      return supertest(app)
+        .post("/bookmarks")
+        .send(newBookmark)
+        .expect(201)
+        .expect((res) => {
+          expect(res.body.title).to.eql(newBookmark.title);
+          expect(res.body.url).to.eql(newBookmark.url);
+          expect(res.body.rating).to.eql(newBookmark.rating);
+          expect(res.body.description).to.eql(newBookmark.description);
+          expect(res.body).to.have.property("id");
+          expect(res.headers.location).to.eql(`/bookmarks/${res.body.id}`);
+        })
+        .then((postRes) =>
+          supertest(app)
+            .get(`/bookmarks/${postRes.body.id}`)
+            .expect(postRes.body)
+        );
+    });
+
+    // test the body, see if required data is missing
+    const requiredFields = ["title", "url", "rating", "description"];
+
+    requiredFields.forEach((field) => {
+      const newBookmark = {
+        //title, url, rating, description
+        title: "Test new bookmark",
+        url: "Listicle",
+        rating: "3",
+        description: "Test new article content...",
+      };
+
+      it(`responds with 400 and an error message when the '${field}' is missing`, () => {
+        delete newBookmark[field];
+
+        return supertest(app)
+          .post("/bookmarks")
+          .send(newBookmark)
+          .expect(400, {
+            error: { message: `Missing '${field}' in request body` },
+          });
+      });
+    });
+  });
 });
