@@ -1,5 +1,6 @@
 const express = require("express");
 const xss = require("xss");
+const path = require("path");
 const logger = require("./logger");
 const { bookmarks } = require("./store");
 const BookmarksService = require("./bookmarks-service");
@@ -8,7 +9,7 @@ const bookmarksRouter = express.Router();
 const bodyParser = express.json();
 
 bookmarksRouter
-  .route("/bookmarks")
+  .route("/")
   .get((req, res, next) => {
     const knexInstance = req.app.get("db");
     BookmarksService.getAllBookmarks(knexInstance)
@@ -34,7 +35,7 @@ bookmarksRouter
       .then((bookmark) => {
         res
           .status(201)
-          .location(`/bookmarks/${bookmark.id}`)
+          .location(path.posix.join(req.originalUrl, `/${bookmark.id}`))
           .json({
             id: res.bookmark.id,
             title: xss(res.bookmark.title), // sanitize title
@@ -47,7 +48,7 @@ bookmarksRouter
   });
 
 bookmarksRouter
-  .route("/bookmarks/:bookmark_id")
+  .route("/:bookmark_id")
   .all((req, res, next) => {
     BookmarksService.getById(req.app.get("db"), req.params.bookmark_id)
       .then((bookmark) => {
@@ -76,6 +77,9 @@ bookmarksRouter
         res.status(204).end();
       })
       .catch(next);
+  })
+  .patch((req, res) => {
+    res.status(204).end();
   });
 
 module.exports = bookmarksRouter;
